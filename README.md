@@ -1,4 +1,4 @@
-# How to use Foundry
+<h1 align="center">Foundry HandsOn</h1>
 
 ```sh
 forge init <Project's name>
@@ -38,8 +38,6 @@ We can replace all the occurrences of `Counter` to `Token` i.e:
 ```
 .
 ├── README.md
-├── cache
-│   └── solidity-files-cache.json
 ├── foundry.toml
 ├── lib
 │   ├── forge-std
@@ -154,3 +152,7 @@ Output:
 ```
 1000000 [1e6]
 ```
+
+# References
+
+[solidity - Foundry scripts read deployed contract addresses - Ethereum Stack Exchange](https://ethereum.stackexchange.com/questions/162092/foundry-scripts-read-deployed-contract-addresses)
