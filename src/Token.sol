@@ -7,10 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Token is ERC20, Ownable {
     constructor(
         address owner,
-        address vestingAddress,
         uint256 initialSupply
     ) ERC20("Token", "TKN") Ownable(owner) {
         // The beneficiary will have all the initialSupply
-        _mint(vestingAddress, initialSupply);
+        _mint(owner, initialSupply);
     }
 }
