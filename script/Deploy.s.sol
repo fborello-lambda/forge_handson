@@ -15,6 +15,7 @@ contract DeploySafeAll is Script {
     address beneficiaryAddress;
     uint64 start;
     uint64 duration;
+    uint256 initialSupply;
 
     function setUp() public {
         deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -22,14 +23,18 @@ contract DeploySafeAll is Script {
         beneficiaryAddress = vm.envAddress("ADDRESS_BENEFICIARY");
         start = uint64(vm.envUint("START_TIME"));
         duration = uint64(vm.envUint("DURATION"));
+        initialSupply = vm.envUint("INITIAL_SUPPLY");
     }
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
-        Vesting vesting = new Vesting(beneficiaryAddress, start, duration);
+        new Vesting(beneficiaryAddress, start, duration);
 
-        Token token = new Token(address(safeWalletAddress), 1000000);
+        Token token = new Token(
+            address(safeWalletAddress),
+            initialSupply * 1e18
+        );
 
         console.logUint(token.balanceOf(safeWalletAddress));
 
@@ -44,8 +49,8 @@ contract DeployVesting is Script {
     uint64 duration;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        beneficiaryAddress = vm.envAddress("ADDRESS_BENEFICIARY");
+        deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        beneficiaryAddress = vm.envAddress("BENEFICIARY_ADDRESS");
         start = uint64(vm.envUint("START_TIME"));
         duration = uint64(vm.envUint("DURATION"));
     }
@@ -53,7 +58,7 @@ contract DeployVesting is Script {
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
-        Vesting vesting = new Vesting(beneficiaryAddress, start, duration);
+        new Vesting(beneficiaryAddress, start, duration);
 
         vm.stopBroadcast();
     }
@@ -62,16 +67,21 @@ contract DeployVesting is Script {
 contract DeployToken is Script {
     uint256 deployerPrivateKey;
     address safeWalletAddress;
+    uint256 initialSupply;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        safeWalletAddress = vm.envAddress("ADDRESS_SAFE");
+        deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        safeWalletAddress = vm.envAddress("SAFE_ADDRESS");
+        initialSupply = vm.envUint("INITIAL_SUPPLY");
     }
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
-        Token token = new Token(address(safeWalletAddress), 1000000);
+        Token token = new Token(
+            address(safeWalletAddress),
+            initialSupply * 1e18
+        );
 
         console.logUint(token.balanceOf(safeWalletAddress));
 

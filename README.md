@@ -1,158 +1,227 @@
-<h1 align="center">Foundry HandsOn</h1>
+<h1 align="center">Foundry/Tokenomics Demo</h1>
 
-```sh
-forge init <Project's name>
+# Before We Start
+
+Using:
+- [slides](https://github.com/maaslalani/slides?tab=readme-ov-file)
+  - `forge` commands don't show the output well.
+    - `jq` commands combined with `sponge` are used to output the contract addresses to the screen and changing the `.envrc` file.
+  - Use `Ctrl-E` to run the `bash` snippets.
+  - `slides README.md` to run the slides in the terminal.
+- [direnv](https://direnv.net/)
+  - `direnv allow` or `direnv reload` doesn't work directly when running `slides`.
+
+---
+
+# Some Theory
+
+## Vesting
+
+- Gradual Token Release: Tokens are released over time, not all at once.
+|
+|
+- Encourages Long-Term Commitment: Stakeholders are motivated to stay with the project.
+|
+|
+- Reduces Market Risks: Prevents sudden sell-offs that can destabilize prices.
+|
+|
+- Builds Credibility: Shows transparency, attracting more investors and partners.
+|
+|
+- Flexible Schedules: Can include linear vesting or cliff vesting options. `Tokenomics`
+  - Useful WebPage [WLD - Unlock Schedule & Tokenomics](https://token.unlocks.app/worldcoin-wld)
+
+## Multi Sig Account
+
+- Multi Sig wallets are `contracts`.
+|
+|
+- We have `N` owners.
+|
+|
+- Each owner can create transactions
+  - to execute them `M` owners have to "sign" it.
+
+
+---
+
+### Pros
+
+- Shared Responsibility
+|
+- Adaptable to Team Structures
+|
+- Risk Mitigation
+  - Reduced Risk of Human Error
+  - Protection Against Threats:
+
+
+### Cons
+
+- Unavailability of Signers
+|
+- Multiple Points of Attack
+|
+- Hard to Manage
+|
+- Complexity in Interacting with Smart Contracts
+  - Difficulty in Executing Transactions
+
+---
+
+## Safe
+
+There are two `easy` ways to deploy a multi-signature wallet.
+The `hard` way involves directly interacting with the contracts.
+
+### Safe CLI
+
+Using Safe's CLI:
+
+```bash
+docker run -it safeglobal/safe-cli safe-creator \
+https://ethereum-sepolia-rpc.publicnode.com \
+$DEPLOYER_PRIVATE_KEY \
+--threshold 1 \
+--owners $DEPLOYER_ADDRESS
 ```
 
-```sh
-cd <Project's name>
+NOTE: It's interactive.
+
+### Safe Wallet APP
+
+Using the web app:
+
+[Safe{Wallet} – Welcome](https://app.safe.global/welcome)
+
+---
+
+# Demo FlowChart
+
+>1. [Create Safe Wallet]
+
+>2. [Create ERC20] -> [Mint to Safe Wallet]
+
+>3. [Create Vesting Wallet]
+
+>4. [Propose multisig TX sending some ERC20]
+> from `SAFE_WALLET` to `VESTING_WALLET`
+
+>5. [Release ERC20]
+
+
+---
+
+# Vesting and Token Demo
+
+## Use the .envrc.example as template
+
+```bash
+cp .envrc.example .envrc
 ```
 
-Install `openzeppelin-contracts`:
+## Initial SetUp
 
-```sh
-forge install OpenZeppelin/openzeppelin-contracts
-echo "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/" >> remmapings.txt
+Set the env variables in the `.envrc` file:
+- `DEPLOYER_PRIVATE_KEY`
+- `DEPLOYER_ADDRESS`
+- `SEPOLIA_URL`
+
+
+## Set the Initial Supply for the ERC20
+
+Set the env variable in the `.envrc` file:
+- `INITIAL_SUPPLY`
+
+---
+
+## Apply the .envrc file
+
+```bash
+direnv allow
 ```
 
-The project's structure should be:
+If changes are made, the variables have to be reloaded:
 
-```
-.
-├── README.md
-├── foundry.toml
-├── lib
-│   ├── forge-std
-│   └── openzeppelin-contracts
-├── remmapings.txt
-├── script
-│   └── Counter.s.sol
-├── src
-│   └── Counter.sol
-└── test
-    └── Counter.t.sol
+```bash
+direnv reload
 ```
 
-We can replace all the occurrences of `Counter` to `Token` i.e:
+NOTE: If running it as a `slide`, you have to close and reopen the slide after running the command.
 
-```
-.
-├── README.md
-├── foundry.toml
-├── lib
-│   ├── forge-std
-│   └── openzeppelin-contracts
-├── remmapings.txt
-├── script
-│   └── Token.s.sol
-├── src
-│   └── Token.sol
-└── test
-    └── Token.t.sol
+---
+
+## Deploy the ERC20 Token
+
+### Forge Script to Deploy
+```bash
+forge script script/Deploy.s.sol:DeployToken --rpc-url $SEPOLIA_URL --broadcast
 ```
 
-Then, inside `Token.sol`, which is the main contract, the example from the [OZ docs'](https://docs.openzeppelin.com/contracts/4.x/erc20#constructing-an-erc20-token-contract) can be used:
+### Print the Contract Address
 
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-contract Token is ERC20 {
-    constructor(uint256 initialSupply) ERC20("Token", "TKN") {
-        // The deployer will have all the initialSupply
-        _mint(msg.sender, initialSupply);
-    }
-}
+```bash
+jq '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json | awk '{print "Contract Address: \033[0;32m" $0 "\033[0m"}'
 ```
 
-Then we have to change the deployment script `script/Token.s.sol`:
+### Modify the .envrc file automatically
 
-- Reference: [Solidity Scripting - Foundry Book](https://book.getfoundry.sh/tutorials/solidity-scripting)
+Use the output to set `ERC20_CONTRACT_ADDRESS` in the `.envrc`.
+The following command does this automatically:
 
-
-```solidity
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
-
-import {Script, console} from "forge-std/Script.sol";
-
-import "../src/Token.sol";
-
-contract TokenScript is Script {
-    uint256 deployerPrivateKey;
-    function setUp() public {
-        // foundry will read the env variable named PRIVATE_KEY
-        // and it will use it to deploy the contract
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-    }
-
-    function run() public {
-        vm.startBroadcast(deployerPrivateKey);
-
-        // This is the initialSupply the constructor will use
-        Token token = new Token(1000000);
-
-        vm.stopBroadcast();
-    }
-}
+```bash
+awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export ERC20_CONTRACT_ADDRESS=/ {print "export ERC20_CONTRACT_ADDRESS=" new_value; next} 1' .envrc.example \
+| sponge .envrc.example
 ```
 
-For simplicity, the contract will be deployed in a local environment created with `anvil`.
-Run `anvil` in a terminal, the output should be:
+---
 
-```
-Available Accounts
-==================
+## Deploy the Vesting Wallet
 
-(0) 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (10000.000000000000000000 ETH)
-.
-.
+### Forge Script to Deploy
 
-Private Keys
-==================
-
-(0) 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-.
-.
+```bash
+START_TIME=$(date +%s) forge script script/Deploy.s.sol:DeployVesting --rpc-url $SEPOLIA_URL --broadcast
 ```
 
-This funded account can be used to deploy the contract, with `anvil` running, open a new terminal and run:
+### Print the Contract Address
 
-```sh
-echo "PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" > .env
-echo "ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" >> .env
+```bash
+jq '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json | awk '{print "Contract Address: \033[0;32m" $0 "\033[0m"}'
 ```
 
-Then, deploy the contract, `forge` will automatically read the `.env` file:
+### Modify the .envrc file automatically
 
-```sh
-forge script script/Token.s.sol:TokenScript --rpc-url http:localhost:8545 --broadcast
+Use the output to set the `VESTING_CONTRACT_ADDRESS` in the `.envrc`.
+The following command does this automatically:
+
+```bash
+awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export VESTING_CONTRACT_ADDRESS=/ {print "export VESTING_CONTRACT_ADDRESS=" new_value; next} 1' .envrc.example \
+| sponge .envrc.example
 ```
 
-Finally, the output should contain the `Contract Address`:
+---
 
-```shell
-✅  [Success]Hash: 0x07ba8c8365d97fa68eef4d623fe5c1a91b7318dee6071b3c4e0de3b8a8e6551b
-Contract Address: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-Block: 1
-Paid: 0.002214764 ETH (553691 gas * 4 gwei)
+## Check if the token can be released
+```bash
+cast call $VESTING_CONTRACT_ADDRESS "releasable(address)(uint256)" $ERC20_CONTRACT_ADDRESS --rpc-url $SEPOLIA_URL
 ```
 
-It can be used with `cast` to ask for the erc20 `balance`, the constructor of the Contract was defined to mint the `initialSupply` to the `deployer` address, and the `initialSupply` was defined in the `Token.s.sol`: `Token token = new Token(1000000);`:
 
-```sh
-source .env
-cast balance --erc20 0x5FbDB2315678afecb367f032d93F642f64180aa3 $ADDRESS --rpc-url http:localhost:8546
+## Check balance
+```bash
+cast balance --erc20 $ERC20_CONTRACT_ADDRESS $BENEFICIARY_ADDRESS --rpc-url $SEPOLIA_URL
 ```
 
-Output:
+---
 
+## Release the tokens
+```bash
+cast send $VESTING_CONTRACT_ADDRESS "release(address)" $ERC20_CONTRACT_ADDRESS --rpc-url $SEPOLIA_URL --private-key $BENEFICIARY_PRIVATE_KEY
 ```
-1000000 [1e6]
+
+## Check balance
+```bash
+cast balance --erc20 $ERC20_CONTRACT_ADDRESS $BENEFICIARY_ADDRESS --rpc-url $SEPOLIA_URL
 ```
-
-# References
-
-[solidity - Foundry scripts read deployed contract addresses - Ethereum Stack Exchange](https://ethereum.stackexchange.com/questions/162092/foundry-scripts-read-deployed-contract-addresses)
