@@ -2,10 +2,14 @@
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Token is ERC20 {
-    constructor(uint256 initialSupply) ERC20("Token", "TKN") {
-        // The deployer will have all the initialSupply
-        _mint(msg.sender, initialSupply);
+contract Token is ERC20, Ownable {
+    constructor(
+        address owner,
+        uint256 initialSupply
+    ) ERC20("Token", "TKN") Ownable(owner) {
+        // The beneficiary will have all the initialSupply
+        _mint(owner, initialSupply);
     }
 }
