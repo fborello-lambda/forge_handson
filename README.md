@@ -30,7 +30,7 @@ Using:
 |
 |
 - Flexible Schedules: Can include linear vesting or cliff vesting options. `Tokenomics`
-  - Useful WebPage [WLD - Unlock Schedule & Tokenomics](https://token.unlocks.app/worldcoin-wld)
+  - Real Case: [OP - Unlock Schedule & Tokenomics](https://token.unlocks.app/optimism)
 
 ## Multi Sig Account
 
@@ -171,8 +171,7 @@ Use the output to set `ERC20_CONTRACT_ADDRESS` in the `.envrc`.
 The following command does this automatically:
 
 ```bash
-awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export ERC20_CONTRACT_ADDRESS=/ {print "export ERC20_CONTRACT_ADDRESS=" new_value; next} 1' .envrc.example \
-| sponge .envrc.example
+awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export ERC20_CONTRACT_ADDRESS=/ {print "export ERC20_CONTRACT_ADDRESS=" new_value; next} 1' .envrc | sponge .envrc
 ```
 
 ---
@@ -197,13 +196,16 @@ Use the output to set the `VESTING_CONTRACT_ADDRESS` in the `.envrc`.
 The following command does this automatically:
 
 ```bash
-awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export VESTING_CONTRACT_ADDRESS=/ {print "export VESTING_CONTRACT_ADDRESS=" new_value; next} 1' .envrc.example \
-| sponge .envrc.example
+awk -v new_value="$(jq -r '.transactions[0].contractAddress' broadcast/Deploy.s.sol/11155111/run-latest.json)" '/^export VESTING_CONTRACT_ADDRESS=/ {print "export VESTING_CONTRACT_ADDRESS=" new_value; next} 1' .envrc | sponge .envrc
 ```
 
 ---
 
 ## Check if the token can be released
+```bash
+echo $VESTING_CONTRACT_ADDRESS
+```
+
 ```bash
 cast call $VESTING_CONTRACT_ADDRESS "releasable(address)(uint256)" $ERC20_CONTRACT_ADDRESS --rpc-url $SEPOLIA_URL
 ```

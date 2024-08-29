@@ -18,9 +18,9 @@ contract DeploySafeAll is Script {
     uint256 initialSupply;
 
     function setUp() public {
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        safeWalletAddress = vm.envAddress("ADDRESS_SAFE");
-        beneficiaryAddress = vm.envAddress("ADDRESS_BENEFICIARY");
+        deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        safeWalletAddress = vm.envAddress("SAFE_ADDRESS");
+        beneficiaryAddress = vm.envAddress("BENEFICIARY_ADDRESS");
         start = uint64(vm.envUint("START_TIME"));
         duration = uint64(vm.envUint("DURATION"));
         initialSupply = vm.envUint("INITIAL_SUPPLY");
